@@ -356,7 +356,7 @@ function setupCrashDetection() {
     // (https://v8.dev/docs/stack-trace-api#compatibility)
     Error.stackTraceLimit = 100
 
-    window.addEventListener('error', function (event) {
+    window.addEventListener('error', function(event) {
         // We prefer stack traces over plain error messages but not all browsers produce traces.
         if (ok(event.error) && ok(event.error.stack)) {
             handleCrash(event.error.stack)
@@ -364,7 +364,7 @@ function setupCrashDetection() {
             handleCrash(event.message)
         }
     })
-    window.addEventListener('unhandledrejection', function (event) {
+    window.addEventListener('unhandledrejection', function(event) {
         // As above, we prefer stack traces.
         // But here, `event.reason` is not even guaranteed to be an `Error`.
         handleCrash(event.reason.stack || event.reason.message || 'Unhandled rejection')
@@ -488,6 +488,7 @@ class Config {
     public no_data_gathering: boolean
     public is_in_cloud: boolean
     public verbose: boolean
+    public application_config_url: string
 
     static default() {
         let config = new Config()
@@ -498,6 +499,8 @@ class Config {
         config.no_data_gathering = false
         config.is_in_cloud = false
         config.entry = null
+        config.application_config_url =
+            'https://raw.githubusercontent.com/enso-org/ide/develop/config.json'
         return config
     }
 
@@ -566,8 +569,42 @@ function tryAsString(value: any): string {
     return value.toString()
 }
 
+async function fetchApplicationConfig(config: Config) {
+    const https = require('https')
+
+    return new Promise((resolve: any, reject: any) => {
+        https.get(config.application_config_url, (res: any) => {
+            if (res.statusCode !== 200) {
+                reject(
+                    new Error(`Request to application config URL return ${res.statusCode}.`)
+                )
+            }
+
+            res.setEncoding('utf8')
+            let rawData = ''
+
+            res.on('data', (chunk: any) => {
+                rawData += chunk
+            })
+
+            res.on('end', () => {
+                try {
+                    const parsedData = JSON.parse(rawData)
+                    resolve(parsedData)
+                } catch (e) {
+                    reject(e)
+                }
+            })
+
+            res.on('error', (e: any) => {
+                reject(e)
+            })
+        })
+    })
+}
+
 /// Main entry point. Loads WASM, initializes it, chooses the scene to run.
-API.main = async function (inputConfig: any) {
+API.main = async function(inputConfig: any) {
     const urlParams = new URLSearchParams(window.location.search)
     // @ts-ignore
     const urlConfig = Object.fromEntries(urlParams.entries())
@@ -575,6 +612,13 @@ API.main = async function (inputConfig: any) {
     const config = Config.default()
     config.updateFromObject(inputConfig)
     config.updateFromObject(urlConfig)
+
+    try {
+        const appConfig = await fetchApplicationConfig(config)
+        console.log('app_config', appConfig)
+    } catch (e) {
+        console.warn('Failed to fetch application config', e)
+    }
 
     // @ts-ignore
     API[globalConfig.windowAppScopeConfigName] = config
@@ -592,10 +636,12 @@ API.main = async function (inputConfig: any) {
     const status = GIT_STATUS
     API.remoteLog('git_status', { status })
 
+
+
     //initCrashHandling()
-    style_root()
-    printScamWarning()
-    hideLogs()
+    //style_root()
+    //printScamWarning()
+    //hideLogs()
     disableContextMenu()
 
     let entryTarget = ok(config.entry) ? config.entry : main_entry_point
@@ -610,7 +656,7 @@ API.main = async function (inputConfig: any) {
         let fn_name = wasm_entry_point_pfx + entryTarget
         let fn = wasm[fn_name]
         if (fn) {
-            fn()
+            //fn()
         } else {
             loader.destroy()
             show_debug_screen(wasm, "Unknown entry point '" + entryTarget + "'. ")
