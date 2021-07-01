@@ -67,7 +67,7 @@ async fn ls_text_protocol_test() {
     let ide      = setup_ide().await;
     let project  = ide.current_project();
     let client   = project.json_rpc();
-    let root_id  = project.content_root_id();
+    let root_id  = project.project_content_root_id();
     let project_name = ReferentName::new(project.name()).unwrap();
 
     // Initialize files.
