@@ -36,8 +36,8 @@ const TOOLBAR_HEIGHT      : f32 = 45.0;
 const TOOLBAR_BORDER_SIZE : f32 = 1.0;
 const CONTENT_OFFSET_Y    : f32 = TOOLBAR_HEIGHT + TOOLBAR_BORDER_SIZE;
 const PADDING             : f32 = 16.0;
-const WIDTH               : f32 = 814.0;
-const HEIGHT              : f32 = 421.0;
+pub const WIDTH           : f32 = 814.0;
+pub const HEIGHT          : f32 = 421.0;
 const CONTENT_HEIGHT      : f32 = HEIGHT - CONTENT_OFFSET_Y;
 const SCROLL_SPACING      : f32 = 30.0;
 
@@ -292,7 +292,7 @@ impl ModelWithFrp {
 
 /// A file browser component. It allows to browse the content of a folder and it's subfolders and
 /// emits an event when an entry is chosen.
-#[derive(Debug)]
+#[derive(Clone,CloneRef,Debug)]
 pub struct FileBrowser(Rc<ModelWithFrp>);
 
 impl Deref for FileBrowser {
