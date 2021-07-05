@@ -45,6 +45,9 @@ use ensogl::display::shape::StyleWatch;
 use ensogl::data::color;
 use ensogl_gui_components::file_browser::model::AnyFolderContent;
 
+pub type Logger = enso_logger::DefaultTraceLogger;
+
+
 
 
 // ==============
@@ -274,6 +277,7 @@ impl Integration {
             });
         }
 
+
         // === Dropping Files ===
 
         let file_dropped = model.view.graph().file_dropped.clone_ref();
@@ -293,6 +297,14 @@ impl Integration {
                     error!(model.logger, "Error when creating node from dropped file: {err}");
                 }
             });
+        }
+
+
+        // === Open File or Project Dialog ===
+
+        frp::extend! { network
+            dialog_is_shown <- project_frp.open_dialog_shown.filter(|v| *v);
+            eval_ dialog_is_shown (model.open_file_dialog_opened_in_ui());
         }
 
 
