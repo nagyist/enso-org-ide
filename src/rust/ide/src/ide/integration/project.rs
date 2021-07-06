@@ -44,6 +44,9 @@ use ensogl::application::Application;
 use ensogl::display::shape::StyleWatch;
 use ensogl::data::color;
 use ensogl_gui_components::file_browser::model::AnyFolderContent;
+use crate::controller::ide::ProjectMetadata;
+use ensogl_gui_components::list_view::entry::AnyEntry;
+use ide_view::searcher::entry::AnyEntryProvider;
 
 pub type Logger = enso_logger::DefaultTraceLogger;
 
@@ -200,6 +203,7 @@ struct Model {
     visualizations          : SharedHashMap<graph_editor::NodeId,VisualizationId>,
     error_visualizations    : SharedHashMap<graph_editor::NodeId,VisualizationId>,
     prompt_was_shown        : Cell<bool>,
+    displayed_project_list  : CloneRefCell<ProjectsToOpen>,
 }
 
 
@@ -304,7 +308,8 @@ impl Integration {
 
         frp::extend! { network
             dialog_is_shown <- project_frp.open_dialog_shown.filter(|v| *v);
-            eval_ dialog_is_shown (model.open_file_dialog_opened_in_ui());
+            eval_ dialog_is_shown (model.open_dialog_opened_in_ui());
+            // eval model.view.open_dialog().project_list.entry_chosen
         }
 
 
@@ -1283,14 +1288,43 @@ impl Model {
         }
     }
 
-    fn open_file_dialog_opened_in_ui(&self) {
-        debug!(self.logger, "Opened file dialog in ui. Providing content root list");
+    fn open_dialog_opened_in_ui(self:&Rc<Self>) {
+        debug!(logger, "Opened file dialog in ui. Providing content root list");
         let provider = FileProvider {
             connection: self.project.json_rpc(),
             content_roots: self.project.content_roots(),
         };
         let provider:AnyFolderContent = provider.into();
         self.view.open_dialog().file_browser.set_content(provider);
+        let model = Rc::downgrade(self);
+
+        executor::global::spawn(async move {
+            if let Some(this) = model.upgrade() {
+                if let Ok(manage_projects) = this.ide.manage_projects() {
+                    match manage_projects.list_projects().await {
+                        Ok(projects) => {
+                            let entries = ProjectsToOpen::new(projects).into();
+                            this.displayed_project_list.set(entries.clone_ref());
+                            let any_entries:AnyEntryProvider = entries.into();
+                            this.view.open_dialog().project_list.set_entries(any_entries)
+                        },
+                        Err(error) => error!(logger,"Error when loading project's list: {error}"),
+                    }
+                }
+            }
+        });
+    }
+
+    fn project_opened_in_ui(&self, entry_id:&list_view::entry::Id) -> FallibleResult {
+        if let Some(id) = self.displayed_project_list.get().get_project_id_by_index(entry_id) {
+            let ide = self.ide.clone_ref();
+            executor::global::spawn(async move {
+                if let Ok(manage_projects) = ide.manage_projects() {
+                    manage_projects.open_project(id)
+                }
+            })
+
+        }
     }
 }
 
@@ -1581,5 +1615,34 @@ impl ide_view::searcher::DocumentationProvider for DataProviderForView {
 impl upload::DataProvider for drop::File {
     fn next_chunk(&mut self) -> LocalBoxFuture<FallibleResult<Option<Vec<u8>>>> {
         self.read_chunk().map(|f| f.map_err(|e| e.into())).boxed_local()
+    }
+}
+
+
+
+// ========================
+// === Project Provider ===
+// ========================
+
+#[derive(Clone,CloneRef,Debug,Default)]
+struct ProjectsToOpen {
+    projects : Rc<Vec<ProjectMetadata>>
+}
+
+impl ProjectsToOpen {
+    fn new(projects:Vec<ProjectMetadata>) -> Self {
+        Self {projects:Rc::new(projects)}
+    }
+
+    fn get_project_id_by_index(&self, index:usize) -> Option<Uuid> {
+        self.projects.get(index).map(|md| md.id)
+    }
+}
+
+impl list_view::entry::EntryProvider for ProjectsToOpen {
+    fn entry_count(&self) -> usize { self.projects.len() }
+
+    fn get(&self, app: &Application, id: usize) -> Option<AnyEntry> {
+        Some(list_view::entry::StringEntry::new(app,self.projects.get(id)?.name.as_ref()).into())
     }
 }
