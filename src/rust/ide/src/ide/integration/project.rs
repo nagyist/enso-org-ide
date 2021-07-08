@@ -9,11 +9,13 @@ use crate::prelude::*;
 
 use crate::controller::graph::Connections;
 use crate::controller::graph::NodeTrees;
+use crate::controller::ide::ProjectMetadata;
 use crate::controller::searcher::action::MatchInfo;
 use crate::controller::searcher::Actions;
 use crate::controller::upload;
 use crate::controller::upload::NodeFromDroppedFileHandler;
 use crate::ide::integration::file_system::FileProvider;
+use crate::ide::integration::file_system::create_node_from_file;
 use crate::model::execution_context::ComputedValueInfo;
 use crate::model::execution_context::ExpressionId;
 use crate::model::execution_context::LocalCall;
@@ -26,31 +28,27 @@ use analytics;
 use bimap::BiMap;
 use enso_data::text::TextChange;
 use enso_frp as frp;
-use enso_protocol::language_server::ExpressionUpdatePayload;
+use ensogl::display;
+use ensogl::application::Application;
+use ensogl::display::shape::StyleWatch;
 use ensogl::display::traits::*;
+use ensogl::data::color;
+use ensogl_gui_components::file_browser::model::AnyFolderContent;
+use ensogl_gui_components::list_view::entry::AnyEntry;
+use ensogl_text as text;
+use enso_protocol::language_server::ExpressionUpdatePayload;
 use ensogl_gui_components::list_view;
 use ensogl_web::drop;
+use futures::future::LocalBoxFuture;
 use ide_view::graph_editor;
 use ide_view::graph_editor::component::node;
 use ide_view::graph_editor::component::visualization;
 use ide_view::graph_editor::EdgeEndpoint;
 use ide_view::graph_editor::GraphEditor;
 use ide_view::graph_editor::SharedHashMap;
-use utils::iter::split_by_predicate;
-use futures::future::LocalBoxFuture;
-use ensogl::display;
-use ensogl_text as text;
-use ensogl::application::Application;
-use ensogl::display::shape::StyleWatch;
-use ensogl::data::color;
-use crate::ide::integration::file_system::{FileProvider, create_node_from_file};
-use ensogl_gui_components::file_browser::model::AnyFolderContent;
-use crate::controller::ide::ProjectMetadata;
-use ensogl_gui_components::list_view::entry::AnyEntry;
+use ide_view::open_dialog;
 use ide_view::searcher::entry::AnyEntryProvider;
-
-pub type Logger = enso_logger::DefaultTraceLogger;
-
+use utils::iter::split_by_predicate;
 
 
 
@@ -1657,6 +1655,6 @@ impl list_view::entry::EntryProvider for ProjectsToOpen {
     fn entry_count(&self) -> usize { self.projects.len() }
 
     fn get(&self, app: &Application, id: usize) -> Option<AnyEntry> {
-        Some(list_view::entry::StringEntry::new(app,self.projects.get(id)?.name.as_ref()).into())
+        Some(open_dialog::project_list::Entry::new(app, self.projects.get(id)?.name.as_str()).into())
     }
 }

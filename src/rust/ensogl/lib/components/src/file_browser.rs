@@ -32,14 +32,19 @@ use ensogl_core::data::color;
 // === Constants ===
 // =================
 
-const TOOLBAR_HEIGHT      : f32 = 45.0;
-const TOOLBAR_BORDER_SIZE : f32 = 1.0;
-const CONTENT_OFFSET_Y    : f32 = TOOLBAR_HEIGHT + TOOLBAR_BORDER_SIZE;
-const PADDING             : f32 = 16.0;
-pub const WIDTH           : f32 = 814.0;
-pub const HEIGHT          : f32 = 421.0;
-const CONTENT_HEIGHT      : f32 = HEIGHT - CONTENT_OFFSET_Y;
-const SCROLL_SPACING      : f32 = 30.0;
+/// The height of the File Browser's toolbar in pixels.
+pub const TOOLBAR_HEIGHT:f32 = 45.0;
+/// The size in pixels of the line between File Browser's toolbar and content.
+pub const TOOLBAR_BORDER_SIZE:f32 = 1.0;
+/// The width of the File Browser in pixels.
+pub const WIDTH:f32 = 814.0;
+/// The height of the File Browser in pixels.
+pub const HEIGHT:f32 = 421.0;
+
+const CONTENT_OFFSET_Y  : f32 = TOOLBAR_HEIGHT + TOOLBAR_BORDER_SIZE;
+const PADDING           : f32 = 16.0;
+const CONTENT_HEIGHT    : f32 = HEIGHT - CONTENT_OFFSET_Y;
+const SCROLL_SPACING    : f32 = 30.0;
 
 fn title_color() -> color::Rgba {
     color::Rgba(0.439, 0.439, 0.439, 1.0)

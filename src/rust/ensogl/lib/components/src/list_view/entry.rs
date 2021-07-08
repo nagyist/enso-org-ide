@@ -131,8 +131,8 @@ impl EntryProvider for EmptyProvider {
 
 // === Entry Provider for Vectors of Strings ===
 
-#[derive(Debug)]
-pub struct StringEntry {
+#[derive(Clone,CloneRef,Debug)]
+struct StringEntry {
     display_object : display::object::Instance,
     label          : text::Area,
 }
