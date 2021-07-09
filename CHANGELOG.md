@@ -1,3 +1,14 @@
+# Next Release
+
+<br/>![New Features](/docs/assets/tags/new_features.svg)
+
+#### Visual Environment
+
+- [File or Project Open Dialog][xxxx]. <kbd>ctrl/cmd</kbd>+<kbd>o</kbd> will
+  display a new File or Project Open Dialog. Here you can open another project,
+  or pick a file from browser: the file will be inserted as a node to the
+  current graph.
+
 # Enso 2.0.0-alpha.7 (2021-06-06)
 
 <br/>![New Features](/docs/assets/tags/new_features.svg)
